@@ -8,7 +8,7 @@
 class renzhengbao
 {
     
-    var $access_key = "renzhengbaotest";
+    var $access_key = "weibo";
     var $access_secret = "pass";
     var $api = "http://api.renzhengbao.com/check";
     var $error_no = '';
@@ -42,7 +42,7 @@ class renzhengbao
         
         if (!$res)
         {
-            $this->error_no = '-4';
+            $this->error_no = '-5';
             return false;
         }
         $res_arr = json_decode($res, true);
@@ -85,13 +85,11 @@ class renzhengbao
                 $msg = "参数错误";
                 break;
             case '-4':
-                $msg = "curl请求失败";
-                break;
-            case '-5':
-                $msg = "参数错误";
-                break;
-            case '-6':
                 $msg = "access_key和access_secret验证失败";
+                break;
+ 
+            case '-5':
+                $msg = "curl请求失败";
                 break;
             default:
                 $msg = "未知错误,请联系contact@renzhengbao.com";
