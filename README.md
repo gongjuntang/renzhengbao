@@ -23,9 +23,6 @@ access_key: 申请接入认证宝服务的唯一标识号 access_secret:申请�
 ##请求实例
 
 curl -X POST http://api.renzhengbao.com/check -d 'access_key=weibo&access_secret=pass&sn=SQRE-2CBG-SQKN-7BT4&rcode=123456'
-##DEMO下载
-
-PHP DEMO下载 (官方版demo示例，接入就可以使用) 你也可以从github上获取最新版本的sdk https://github.com/gongjuntang/renzhengbao
 ##联系我们
 
 如果有什么疑问或者建议请联系：contact@renzhengbao.com
