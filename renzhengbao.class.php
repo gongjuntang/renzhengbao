@@ -11,7 +11,7 @@ class renzhengbao
 {
     
     var $access_key = "weibo";
-    var $access_secret = "pass";
+    var $access_secret = "7bd318a9b50815f374ccb944e4431d58";
     var $rcode_check_api = "http://api.renzhengbao.com/check";
     var $qrcode_init_api = "http://api.renzhengbao.com/qrcode_init";
     var $qrcode_token_api="http://api.renzhengbao.com/qrcode_token";
@@ -156,14 +156,14 @@ class renzhengbao
             'level' => $this->level,
             'size' => $this->size,
             'margin' => $this->margin,
-            'limit' => 5,
+            'limit' => 1,
             'timestamp' => time(),
             'nonce' => substr(md5(rand(10000, 99999) . microtime()), 10, 5)
             
         );
         $data['sign'] = $this->create_sign($data);
         $url          = $this->qrcode_init_api . "?" . http_build_query($data);
-        //  echo $url;
+       //  echo $url;
         $res          = file_get_contents($url);
         if (!$res)
         {
@@ -193,7 +193,7 @@ class renzhengbao
      * 查询某一个二维码状态
      * @return -1，未扫描，false 失效了，string 当前sn
      */
-    public function get_token_status($token)
+    public function get_token_sn($token)
     {
         if(empty($token))
             return false;
@@ -208,14 +208,12 @@ class renzhengbao
                }
         }
         $info =$this->get_token_info($token); 
-      //  echo time();
-        //print_r($info);
+       
         if(empty($info)||$info['expire_time']<time()) //云端没有信息，页面刷新吧
         { 
             return 0;
         } 
-        //echo "wkao";
-       // echo $info['sn'];
+        
         return $info['sn']?$info['sn']:-1;
   
     }
@@ -278,7 +276,9 @@ class renzhengbao
     {
 
         ksort($data);
-        $sign = md5(implode(',', $data) . $this->access_secret);
+        $data_str=http_build_query($data);
+       // echo $data_str . $this->access_secret;
+        $sign = md5($data_str . $this->access_secret);
         return $sign;
     }
     
@@ -296,11 +296,13 @@ class renzhengbao
         $access_key = $data['access_key'];
         unset($data['sign']);
         ksort($data);
+        $data_str=http_build_query($data);
         $access_secret = $this->access_secret;
-        $check_sign    = md5(implode(',', $data) . $access_secret);
+        $check_sign    = md5($data_str. $access_secret);
         
         return ($sign === $check_sign) ? true : false;
     }
+
     private function memcache_init()
     {
     
@@ -309,7 +311,7 @@ class renzhengbao
            return false;
         }
 
-        $this->mc = memcache_init();
+        $this->mc = @memcache_init();
         if ($this->mc == false)
         {
             return false;
