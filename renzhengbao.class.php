@@ -1,36 +1,32 @@
 <?php
-
 /**
  * 客户端 sdk 1.1
- * 需要memcache支持
  * gongjun#renzhengbao.com 
  * http://www.renzhengbao.com
  */
-
 class renzhengbao
 {
-    
     var $access_key = "weibo";
     var $access_secret = "7bd318a9b50815f374ccb944e4431d58";
     var $rcode_check_api = "http://api.renzhengbao.com/check";
     var $qrcode_init_api = "http://api.renzhengbao.com/qrcode_init";
-    var $qrcode_token_api="http://api.renzhengbao.com/qrcode_token";
+    var $qrcode_token_api = "http://api.renzhengbao.com/qrcode_token";
     var $error_no = '';
     var $level = "H";
     var $size = "5";
     var $margin = "2";
     var $mc;
-    
+    /**
+     * 构造函数
+     */
     public function renzhengbao($access_key = '', $access_secret = '')
     {
         if (!empty($access_key) && !empty($access_secret))
         {
             $this->access_key    = $access_key;
             $this->access_secret = $access_secret;
-            
         }
     }
-    
     /**
      *认证码验证
      */
@@ -48,7 +44,6 @@ class renzhengbao
         );
         $post_data['sign'] = $this->create_sign($post_data);
         $res               = $this->post_data($this->rcode_check_api, $post_data);
-        // echo $res; exit;
         if (!$res)
         {
             $this->error_no = '-5';
@@ -56,14 +51,12 @@ class renzhengbao
         }
         $res_arr = json_decode($res, true);
         $status  = $res_arr['stat'];
-        
         if ($status < 1) //认证失败
         {
             //            echo $res; eixt;
             $this->error_no = $status;
             return false;
         }
-        //         $this->error_no=1;
         return $status;
     }
     /**
@@ -71,17 +64,13 @@ class renzhengbao
      */
     public function get_error_no()
     {
-        
         return $this->error_no;
     }
-    
-    
     /**
-     *获取错误原因，
+     *获取错误原因
      */
     public function get_error_msg()
     {
-        
         switch ($this->error_no)
         {
             case '1':
@@ -102,7 +91,6 @@ class renzhengbao
             case '-4':
                 $msg = "数据校验失败";
                 break;
-            
             case '-5':
                 $msg = "curl请求失败";
                 break;
@@ -111,9 +99,7 @@ class renzhengbao
                 break;
         }
         return $msg;
-        
     }
-    
     /**
      * curl提交数据
      */
@@ -123,7 +109,7 @@ class renzhengbao
         {
             return false;
         }
-        if(!function_exists("curl_init"))
+        if (!function_exists("curl_init"))
         {
             return false;
         }
@@ -132,7 +118,6 @@ class renzhengbao
         {
             exit('内部错误：服务器不支持CURL');
         }
-        
         curl_setopt($ch, CURLOPT_URL, $url);
         curl_setopt($ch, CURLOPT_POST, 1);
         curl_setopt($ch, CURLOPT_HEADER, 0);
@@ -159,11 +144,9 @@ class renzhengbao
             'limit' => 1,
             'timestamp' => time(),
             'nonce' => substr(md5(rand(10000, 99999) . microtime()), 10, 5)
-            
         );
         $data['sign'] = $this->create_sign($data);
         $url          = $this->qrcode_init_api . "?" . http_build_query($data);
-       //  echo $url;
         $res          = file_get_contents($url);
         if (!$res)
         {
@@ -177,7 +160,6 @@ class renzhengbao
             $this->error_no = $status;
             return false;
         }
-        
         if ($this->memcache_init() && !empty($res_arr['data'])) //数据放入memcache
         {
             foreach ($res_arr['data'] as $line)
@@ -187,65 +169,54 @@ class renzhengbao
         }
         return $res_arr['data'];
     }
- 
-    
     /**
      * 查询某一个二维码状态
      * @return -1，未扫描，false 失效了，string 当前sn
      */
     public function get_token_sn($token)
     {
-        if(empty($token))
+        if (empty($token))
             return false;
-
-        if ( $this->memcache_init()) //memcache中获取
+        if ($this->memcache_init()) //memcache中获取
         {
-            
-              $sn = memcache_get($this->mc, $token);
-              if($sn>0)
-              {
-                    return $sn;
-               }
+            $sn = memcache_get($this->mc, $token);
+            if ($sn > 0)
+            {
+                return $sn;
+            }
         }
-        $info =$this->get_token_info($token); 
-       
-        if(empty($info)||$info['expire_time']<time()) //云端没有信息，页面刷新吧
-        { 
+        $info = $this->get_token_info($token);
+        if (empty($info) || $info['expire_time'] < time()) //云端没有信息，页面刷新吧
+        {
             return 0;
-        } 
-        
-        return $info['sn']?$info['sn']:-1;
-  
+        }
+        return $info['sn'] ? $info['sn'] : -1;
     }
     /**
-    *从云端查询一条token的信息
-    */
+     *从认证宝云端查询一条token的信息
+     */
     public function get_token_info($token)
     {
-        $data = array(
+        $data         = array(
             'access_key' => $this->access_key,
             'nonce' => substr(md5(rand(1000, 9999) . microtime()), 10, 5),
             'timestamp' => time(),
-            'token'=>$token
-        ); 
-        
+            'token' => $token
+        );
         $data['sign'] = $this->create_sign($data);
         $url          = $this->qrcode_token_api . "?" . http_build_query($data);
-       // echo $url;
+        // echo $url;
         $res          = file_get_contents($url);
-         
-        $res_arr = json_decode($res, true);
-        $status  = $res_arr['stat'];
-        if ($status == 1)  
+        $res_arr      = json_decode($res, true);
+        $status       = $res_arr['stat'];
+        if ($status == 1)
         {
             return $res_arr['data'];
         }
         return false;
-
     }
-
     /**
-     * data=array("sn"=>'',token=>'','sign'=>);
+     * 接收认证宝推送的数据
      */
     public function recv_token($data)
     {
@@ -258,10 +229,9 @@ class renzhengbao
         {
             return false;
         }
-        if ($this->get_token_status($data['token']) < 0) //存在token，并且未扫描
+        if ($this->get_token_sn($data['token']) < 0) //存在token，并且未扫描
         {
-
-            if($this->memcache_init())
+            if ($this->memcache_init())
             {
                 memcache_set($this->mc, $data['token'], $data['sn']);
             }
@@ -274,16 +244,14 @@ class renzhengbao
      */
     public function create_sign($data)
     {
-
         ksort($data);
-        $data_str=http_build_query($data);
-       // echo $data_str . $this->access_secret;
-        $sign = md5($data_str . $this->access_secret);
+        $data_str = http_build_query($data);
+        // echo $data_str . $this->access_secret;
+        $sign     = md5($data_str . $this->access_secret);
         return $sign;
     }
-    
     /**
-     * 数据签名检查
+     * 签名检查
      */
     public function check_sign($data)
     {
@@ -292,25 +260,23 @@ class renzhengbao
         {
             return false;
         }
-        
         $access_key = $data['access_key'];
         unset($data['sign']);
         ksort($data);
-        $data_str=http_build_query($data);
+        $data_str      = http_build_query($data);
         $access_secret = $this->access_secret;
-        $check_sign    = md5($data_str. $access_secret);
-        
+        $check_sign    = md5($data_str . $access_secret);
         return ($sign === $check_sign) ? true : false;
     }
-
+    /**
+     * memcache init
+     */
     private function memcache_init()
     {
-    
-        if(!function_exists("memcache_init"))
+        if (!function_exists("memcache_init"))
         {
-           return false;
+            return false;
         }
-
         $this->mc = @memcache_init();
         if ($this->mc == false)
         {
