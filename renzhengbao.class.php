@@ -17,7 +17,7 @@ class renzhengbao
     var $margin = "2";
     var $mc;
     /**
-     * 构造函数
+     * 构造函数,设置access_key,access_secret
      */
     public function renzhengbao($access_key = '', $access_secret = '')
     {
@@ -28,7 +28,10 @@ class renzhengbao
         }
     }
     /**
-     *认证码验证
+     * 认证码验证
+     * @param  String $sn 认证宝app序列号
+     * @param String $rcode 认证宝动态码
+     * @return int $status 认证状态码,1 表示认证通过
      */
     public function check_rcode($sn, $rcode)
     {
@@ -61,13 +64,15 @@ class renzhengbao
     }
     /**
      *获取错误代码
+     * @return $error_no 上一次api调用的错误代码
      */
     public function get_error_no()
     {
         return $this->error_no;
     }
     /**
-     *获取错误原因
+     * 获取错误原因
+     * @return $msg 上一次调用api的错误代码中文含义
      */
     public function get_error_msg()
     {
@@ -102,6 +107,9 @@ class renzhengbao
     }
     /**
      * curl提交数据
+     * @param String $url 提交地址
+     * @param Array $data 提交数据
+     * @return String 请求结果
      */
     private function post_data($url, $data)
     {
@@ -131,8 +139,8 @@ class renzhengbao
         return $result;
     }
     /**
-     *初始化二维码信息
-     *@return 返回二维码信息
+     * 初始化二维码信息
+     * @return Array 返回二维码信息,包含token,二维码图片url,有效时间
      */
     public function init_qrcode()
     {
@@ -171,6 +179,7 @@ class renzhengbao
     }
     /**
      * 查询某一个二维码状态
+     * @param String $token 会话token
      * @return -1，未扫描，false 失效了，string 当前sn
      */
     public function get_token_sn($token)
@@ -194,6 +203,8 @@ class renzhengbao
     }
     /**
      *从认证宝云端查询一条token的信息
+     * @param String $token 会话token
+     * @return false/Array 服务端的token查询结果
      */
     public function get_token_info($token)
     {
@@ -216,7 +227,7 @@ class renzhengbao
         return false;
     }
     /**
-     * 接收认证宝推送的数据
+     * 接收认证宝推送的数据，需要认证宝配置推送地址
      */
     public function recv_token($data)
     {
@@ -229,7 +240,7 @@ class renzhengbao
         {
             return false;
         }
-        if ($this->get_token_sn($data['token']) < 0) //存在token，并且未扫描
+        if ($this->get_token_sn($data['token']) < 0) //存在token，并且未扫描,记录日志，写入库
         {
             if ($this->memcache_init())
             {
@@ -240,7 +251,9 @@ class renzhengbao
         return true;
     }
     /**
-     *生成签名
+     * 生成签名
+     * @param Array $data 签名的数据源
+     * @return String $sign 签名结果
      */
     public function create_sign($data)
     {
@@ -252,6 +265,8 @@ class renzhengbao
     }
     /**
      * 签名检查
+     * @param Array $data 数据集
+     * @return bool 校验结果   
      */
     public function check_sign($data)
     {
