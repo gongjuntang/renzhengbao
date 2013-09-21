@@ -8,7 +8,7 @@ class renzhengbao
 {
     var $access_key = "weibo";
     var $access_secret = "7bd318a9b50815f374ccb944e4431d58";
-    var $rcode_check_api = "http://api.renzhengbao.com/check";
+    var $rcode_check_api = "http://api.renzhengbao.com/rcode_check";
     var $qrcode_init_api = "http://api.renzhengbao.com/qrcode_init";
     var $qrcode_token_api = "http://api.renzhengbao.com/qrcode_token";
     var $error_no = '';
