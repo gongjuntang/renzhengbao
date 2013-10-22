@@ -6,7 +6,7 @@
  */
 class renzhengbao
 {
-    var $access_key = "weibo";
+    var $access_key = "renzhengbao";
     var $access_secret = "7bd318a9b50815f374ccb944e4431d58";
     var $rcode_check_api = "http://api.renzhengbao.com/rcode_check";
     var $qrcode_init_api = "http://api.renzhengbao.com/qrcode_init";
@@ -15,7 +15,6 @@ class renzhengbao
     var $level = "H";
     var $size = "5";
     var $margin = "2";
-    var $mc;
     /**
      * 构造函数,设置access_key,access_secret
      */
@@ -155,6 +154,7 @@ class renzhengbao
         );
         $data['sign'] = $this->create_sign($data);
         $url          = $this->qrcode_init_api . "?" . http_build_query($data);
+        //echo $url;
         $res          = file_get_contents($url);
         if (!$res)
         {
@@ -168,13 +168,7 @@ class renzhengbao
             $this->error_no = $status;
             return false;
         }
-        if ($this->memcache_init() && !empty($res_arr['data'])) //数据放入memcache
-        {
-            foreach ($res_arr['data'] as $line)
-            {
-                memcache_set($this->mc, $line['token'], -1, $line['expire_time'] - time());
-            }
-        }
+        
         return $res_arr['data'];
     }
     /**
@@ -186,14 +180,7 @@ class renzhengbao
     {
         if (empty($token))
             return false;
-        if ($this->memcache_init()) //memcache中获取
-        {
-            $sn = memcache_get($this->mc, $token);
-            if ($sn > 0)
-            {
-                return $sn;
-            }
-        }
+         
         $info = $this->get_token_info($token);
         if (empty($info) || $info['expire_time'] < time()) //云端没有信息，页面刷新吧
         {
@@ -227,7 +214,7 @@ class renzhengbao
         return false;
     }
     /**
-     * 接收认证宝推送的数据，需要认证宝配置推送地址
+     * 接收认证宝推送的数据，需要认证宝配置推送地址,本接口为定制开发
      */
     public function recv_token($data)
     {
@@ -241,11 +228,7 @@ class renzhengbao
             return false;
         }
         if ($this->get_token_sn($data['token']) < 0) //存在token，并且未扫描,记录日志，写入库
-        {
-            if ($this->memcache_init())
-            {
-                memcache_set($this->mc, $data['token'], $data['sn']);
-            }
+        { 
             return $data['token'];
         }
         return true;
@@ -283,20 +266,5 @@ class renzhengbao
         $check_sign    = md5($data_str . $access_secret);
         return ($sign === $check_sign) ? true : false;
     }
-    /**
-     * memcache init
-     */
-    private function memcache_init()
-    {
-        if (!function_exists("memcache_init"))
-        {
-            return false;
-        }
-        $this->mc = @memcache_init();
-        if ($this->mc == false)
-        {
-            return false;
-        }
-        return $this->mc;
-    }
+     
 }
