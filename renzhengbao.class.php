@@ -46,6 +46,8 @@ class renzhengbao
         );
         $post_data['sign'] = $this->create_sign($post_data);
         $res               = $this->post_data($this->rcode_check_api, $post_data);
+        //echo $res;
+
         if (!$res)
         {
             $this->error_no = '-5';
